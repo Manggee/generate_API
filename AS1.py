@@ -4,19 +4,12 @@ import requests
 from utils.db_config import DB_CONFIG
 from utils.generate_ import generate, generate_group
 
-api = 'http://52.79.199.83:9090/api/v1'
+api = 'http://tr-sv-1:9090/api/v1'
+
+session = requests.Session()
 
 # 회원 가입 또는 로그인에서 받아오는 Response에서 member의 id를 추출 후 고정된 memberId를 사용
 memberId = None
-
-
-# DB_CONFIG = {
-#     'host': '54.180.151.205',
-#     'port': 3366,
-#     'user': 'tripcok',
-#     'password': 'tripcok1234',
-#     'database': 'tripcok_db'
-# }
 
 
 # 로그인
@@ -48,7 +41,7 @@ def login(email=None, password=None):
             # memberId = user['id']
 
         # API를 통해 로그인 요청
-        response = requests.put(api + '/member/login', json={'email': email, 'password': password})
+        response = session.put(api + '/member/login', json={'email': email, 'password': password})
 
         if response.status_code == 200:
             print(f"로그인 성공: {email}, memberId: {response.json()['id']}")
@@ -68,7 +61,7 @@ def login(email=None, password=None):
             cursor.close()
             connection.close()
 
-    response = requests.get(api + '/member/login', params={'email': email, 'password': password})
+    response = session.get(api + '/member/login', params={'email': email, 'password': password})
     if not response.status_code == 200:
         return False
 
@@ -80,7 +73,7 @@ def register():
     print(f"생성된 사용자 데이터: {data}")
 
     # 회원가입 API 통신
-    response = requests.post(api + '/member/register', json=data, headers={'Content-Type': 'application/json'})
+    response = session.post(api + '/member/register', json=data, headers={'Content-Type': 'application/json'})
     print(f"회원가입 응답 코드: {response.status_code}")  # 응답 상태 코드 출력
     print(f"회원가입 응답 내용: {response.text}")  # 응답 본문 출력
 
@@ -98,7 +91,7 @@ def create_group(group_data):
     headers = {
         'Content-Type': 'application/json',
     }
-    response = requests.post(api + '/group', json=group_data, headers=headers)
+    response = session.post(api + '/group', json=group_data, headers=headers)
     print(f"모임 생성 응답 코드: {response.status_code}")
     print(f"모임 생성 응답 내용: {response.text}")
 
@@ -111,22 +104,44 @@ def create_group(group_data):
 
 if __name__ == '__main__':
 
-    # 회원가입 및 로그인 둘중 하나 선택
+    # 시나리오 랜덤으로 돌리기
     choice_num = random.choice([1, 2, 3, 4, 5, 6])
 
+    # 로그인 실행
     if choice_num in [1, 2]:
         print("로그인을 실행합니다.")
         login()
-    elif choice_num in [3]:
+    # 회원가입 실행
+    elif choice_num in [3, 4]:
         print("회원가입을 실행합니다.")
         register()
+    # 회원가입 후 로그인 및 모임생성
     else:
-        print("로그인 후 모임 생성을 실행합니다.")
-        memberId = login()
-        if memberId:
-            print(f"로그인한 memberId: {memberId}")
-            group_data = generate_group(memberId)
-            print(f"생성된 모임 데이터 : {group_data}")
-            create_group(group_data)
+        print("회원가입 후 로그인 및 모임 생성을 실행합니다.")
+        user_data = register()
+        if user_data:
+            email, password = user_data['email'], user_data['password']
+            print(f"회원가입한 사용자 이메일: {email}, 비밀번호: {password}")
+
+            login_response = login(email, password)
+            if login_response:
+                memberId = login_response.get('id')
+                print(f"로그인 성공! memberId: {memberId}")
+
+                group_data = generate_group(memberId)
+                print(f"생성된 모임 데이터: {group_data}")
+                create_group(group_data)
+            else:
+                print("로그인 실패로 모임 생성이 중단되었습니다.")
         else:
-            print("모임 생성을 위한 멤버 ID를 가져오지 못했습니다.")
+            print("회원가입 실패로 프로세스를 중단합니다.")
+
+        # print("로그인 후 모임 생성을 실행합니다.")
+        # memberId = login()
+        # if memberId:
+        #     print(f"로그인한 memberId: {memberId}")
+        #     group_data = generate_group(memberId)
+        #     print(f"생성된 모임 데이터 : {group_data}")
+        #     create_group(group_data)
+        # else:
+        #     print("모임 생성을 위한 멤버 ID를 가져오지 못했습니다.")
