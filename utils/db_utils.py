@@ -38,3 +38,41 @@ def fetch_random_member_id():
         if connection and connection.is_connected():
             cursor.close()
             connection.close()
+
+
+def fetch_random_group_id(member_id):
+    connection = None
+    try:
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+
+        # 본인이 생성하거나 가입하지 않은 랜덤 모임 가져오기
+        query = """
+            SELECT group_id
+            FROM groups
+            WHERE group_id NOT IN (
+                SELECT group_id FROM group_member WHERE member_id = %s
+            )
+            AND group_id NOT IN (
+                SELECT group_id 
+                FROM group_member
+                WHERE member_id = %s AND role = 'ADMIN'
+            )
+            AND recruiting = TRUE
+            ORDER BY RAND() LIMIT 1
+            """
+        cursor.execute(query, (member_id, member_id))
+        result = cursor.fetchone()
+
+        if result:
+            return result['group_id']
+        else:
+            print("사용 가능한 랜덤 모임이 없습니다.")
+            return None
+    except mysql.connector.Error as err:
+        print(f"DB 에러 발생: {err}")
+        return None
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
