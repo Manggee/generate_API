@@ -102,6 +102,42 @@ def create_group(group_data):
         return None
 
 
+# 모임 신청
+def create_application(memberId, groupId):
+    print(f"모임 신청: memberId: {memberId}, groupId: {groupId}")
+    application_data = {
+        "memberId": memberId,
+        "groupId": groupId
+    }
+    headers = {
+        'Content-Type': 'application/json',
+    }
+
+    response = session.post(api + '/application', json=application_data, headers=headers)
+    print(f"모임 신청 응답 코드: {response.status_code}")
+    print(f"모임 신청 응답 내용: {response.text}")
+
+    try:
+        # JSON 파싱 시도
+        response_json = response.json()
+        if response.status_code == 201:
+            print("모임 신청 성공!")
+            return response_json
+    except requests.exceptions.JSONDecodeError:
+        # JSON 형식이 아니면 텍스트 그대로 처리
+        print(f"JSONDecodeError: 서버 응답이 JSON 형식이 아닙니다. 내용: {response.text}")
+        if response.status_code == 201:
+            print("모임 신청 성공!")
+            return {"message": response.text}  # 텍스트 응답을 JSON처럼 반환
+        else:
+            print(f"모임 신청 실패: {response.status_code}, {response.text}")
+            return None
+    print(f"모임 신청 실패: {response.status_code}, {response.text}")
+
+    # 상태 코드가 실패일 경우
+    return None
+
+
 if __name__ == '__main__':
 
     # 시나리오 랜덤으로 돌리기
@@ -136,12 +172,38 @@ if __name__ == '__main__':
         else:
             print("회원가입 실패로 프로세스를 중단합니다.")
 
-        # print("로그인 후 모임 생성을 실행합니다.")
-        # memberId = login()
-        # if memberId:
-        #     print(f"로그인한 memberId: {memberId}")
-        #     group_data = generate_group(memberId)
-        #     print(f"생성된 모임 데이터 : {group_data}")
-        #     create_group(group_data)
-        # else:
-        #     print("모임 생성을 위한 멤버 ID를 가져오지 못했습니다.")
+if __name__ == '__main__':
+    print("회원가입 후 로그인 및 모임 생성 및 신청을 실행합니다.")
+
+    # 회원가입 및 로그인
+    user_data = register()
+    if user_data:
+        email, password = user_data['email'], user_data['password']
+        print(f"회원가입한 사용자 이메일: {email}, 비밀번호: {password}")
+
+        login_response = login(email, password)
+        if login_response:
+            memberId = login_response.get('id')
+            print(f"로그인 성공! memberId: {memberId}")
+
+            # 모임 생성
+            group_data = generate_group(memberId)
+            print(f"생성된 모임 데이터: {group_data}")
+            group_response = create_group(group_data)
+
+            if group_response:
+                groupId = group_response.get('id')  # 생성된 모임 ID
+                print(f"모임 생성 성공! groupId: {groupId}")
+
+                # 모임 신청
+                application_response = create_application(memberId, groupId)
+                if application_response:
+                    print("모임 신청 완료!")
+                else:
+                    print("모임 신청 실패!")
+            else:
+                print("모임 생성 실패로 프로세스를 중단합니다.")
+        else:
+            print("로그인 실패로 프로세스를 중단합니다.")
+    else:
+        print("회원가입 실패로 프로세스를 중단합니다.")
