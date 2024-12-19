@@ -1,8 +1,8 @@
 import mysql.connector
 from utils.db_config import DB_CONFIG
 
+# 데이터베이스에서 랜덤으로 카테고리를 가져오기
 def fetch_available_categories():
-    # 데이터베이스에서 랜덤으로 카테고리를 가져오기
     connection = None
     try:
         connection = mysql.connector.connect(**DB_CONFIG)
@@ -18,8 +18,9 @@ def fetch_available_categories():
             cursor.close()
             connection.close()
 
+
+# 데이터베이스에서 랜덤으로 회원의 memberId를 가져오기
 def fetch_random_member_id():
-    # 데이터베이스에서 랜덤으로 회원의 memberId를 가져오기
     connection = None
     try:
         connection = mysql.connector.connect(**DB_CONFIG)
@@ -68,6 +69,88 @@ def fetch_random_group_id(member_id):
             return result['group_id']
         else:
             print("사용 가능한 랜덤 모임이 없습니다.")
+            return None
+    except mysql.connector.Error as err:
+        print(f"DB 에러 발생: {err}")
+        return None
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# DB에서 모든 신청 데이터를 조회
+def fetch_all_applications():
+    connection = None
+    try:
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+
+        # 모든 신청 조회 쿼리
+        query = "SELECT application_id, group_id FROM application"
+        cursor.execute(query)
+
+        applications = cursor.fetchall()  # 모든 신청 데이터 가져오기
+        return applications
+    except mysql.connector.Error as err:
+        print(f"DB 에러 발생: {err}")
+        return []
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# 특정 그룹에서 사용자가 ADMIN인지 확인
+def check_role(member_id, group_id):
+    connection = None
+    try:
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+
+        # ADMIN 확인 쿼리
+        query = """
+        SELECT role 
+        FROM group_member 
+        WHERE group_id = %s AND member_id = %s
+        """
+        cursor.execute(query, (group_id, member_id))
+        result = cursor.fetchone()
+
+        # role이 ADMIN인지 확인
+        if result and result.get('role') == 'ADMIN':
+            return True
+        return False
+
+    except mysql.connector.Error as err:
+        print(f"DB 에러 발생: {err}")
+        return False
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+# 특정 그룹의 ADMIN 사용자 조회
+def get_admin(group_id):
+    connection = None
+    try:
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor(dictionary=True)
+
+        query = """
+            SELECT m.email, m.password 
+            FROM member m
+            JOIN group_member gm ON m.id = gm.member_id
+            WHERE gm.group_id = %s AND gm.role = 'ADMIN'
+            LIMIT 1
+            """
+        cursor.execute(query, (group_id,))
+        result = cursor.fetchone()
+
+        if result:
+            print(f"그룹 {group_id}의 ADMIN 사용자: {result['email']}")
+            return result
+        else:
+            print(f"그룹 {group_id}의 ADMIN 사용자를 찾을 수 없습니다.")
             return None
     except mysql.connector.Error as err:
         print(f"DB 에러 발생: {err}")
