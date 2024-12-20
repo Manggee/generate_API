@@ -1,5 +1,7 @@
+import random
 import mysql.connector
 from utils.db_config import DB_CONFIG
+
 
 # 데이터베이스에서 랜덤으로 카테고리를 가져오기
 def fetch_available_categories():
@@ -78,6 +80,7 @@ def fetch_random_group_id(member_id):
             cursor.close()
             connection.close()
 
+
 # DB에서 모든 신청 데이터를 조회
 def fetch_all_applications():
     connection = None
@@ -98,6 +101,7 @@ def fetch_all_applications():
         if connection and connection.is_connected():
             cursor.close()
             connection.close()
+
 
 # 특정 그룹에서 사용자가 ADMIN인지 확인
 def check_role(member_id, group_id):
@@ -155,6 +159,51 @@ def get_admin(group_id):
     except mysql.connector.Error as err:
         print(f"DB 에러 발생: {err}")
         return None
+    finally:
+        if connection and connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+# 선호 카테고리를 설정하고 선호카테고리 상태를 DONE으로 변경
+def set_prefer_category(member_id):
+    connection = None
+    try:
+        # DB 연결
+        connection = mysql.connector.connect(**DB_CONFIG)
+        cursor = connection.cursor()
+
+        # 사용 가능한 카테고리 가져오기
+        available_categories = fetch_available_categories()
+        if not available_categories:
+            print("사용 가능한 카테고리가 없습니다.")
+            return
+
+        # 랜덤으로 3개의 선호 카테고리 선택
+        categories = random.sample(available_categories, 3)
+
+        # member_preference_category 테이블에 카테고리 추가
+        for category_id in categories:
+            query = """
+            INSERT INTO member_preference_category (member_id, place_category_place_category_id)
+            VALUES (%s, %s)
+            """
+            cursor.execute(query, (member_id, category_id))
+        connection.commit()
+        print(f"memberId={member_id}에 대한 선호 카테고리 추가 완료: {categories}")
+
+        # member 테이블에서 is_prefer_category를 'DONE'으로 업데이트
+        update_query = """
+        UPDATE member
+        SET is_prefer_category = 'DONE'
+        WHERE id = %s
+        """
+        cursor.execute(update_query, (member_id,))
+        connection.commit()
+        print(f"memberId={member_id}의 선호 카테고리를 'DONE'으로 업데이트 완료")
+
+    except mysql.connector.Error as err:
+        print(f"DB 에러 발생: {err}")
     finally:
         if connection and connection.is_connected():
             cursor.close()

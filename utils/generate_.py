@@ -1,5 +1,3 @@
-from unicodedata import category
-
 from faker import Faker
 import random
 from utils.db_utils import fetch_available_categories
@@ -14,7 +12,6 @@ def generate():
     birthday = fake.date()
     gender = random.choice(['MALE', 'FEMALE'])
     address = fake.address()
-    category = random.choice(fetch_available_categories())
 
     data = {'name': name,
             'email': email,
@@ -22,8 +19,7 @@ def generate():
             'phone': phone,
             'birthday': birthday,
             'gender': gender,
-            'address': address,
-
+            'address': address
             }
 
     return data

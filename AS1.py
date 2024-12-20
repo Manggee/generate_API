@@ -2,8 +2,8 @@ import random
 import mysql.connector
 import requests
 from utils.db_config import DB_CONFIG
-from utils.db_utils import fetch_random_group_id, fetch_all_applications, get_admin
-from utils.generate_ import generate, generate_group
+from utils.db_utils import fetch_random_group_id, set_prefer_category
+from utils.generate_ import generate
 
 api = 'http://tr-sv-1:9090/api/v1'
 
@@ -69,21 +69,29 @@ def login(email=None, password=None):
 
 # 회원가입
 def register():
-    #  사용자 정보 생성
     data = generate()
     print(f"생성된 사용자 데이터: {data}")
 
     # 회원가입 API 통신
     response = session.post(api + '/member/register', json=data, headers={'Content-Type': 'application/json'})
-    print(f"회원가입 응답 코드: {response.status_code}")  # 응답 상태 코드 출력
-    print(f"회원가입 응답 내용: {response.text}")  # 응답 본문 출력
+    print(f"회원가입 응답 코드: {response.status_code}")
+    print(f"회원가입 응답 내용: {response.text}")
 
-    # 회원가입 API 통신을 성공 할 경우 -> 로그인
+    # 회원가입 성공 시 로그인
     if response.status_code == 201:
         login_success = login(data['email'], data['password'])
-        return data if login_success else None
+        if login_success:
+            member_id = login_success.get('id')
+            print(f"로그인 성공! memberId: {member_id}")
+
+            # 선호 카테고리 설정
+            print(f"memberId={member_id}에 대해 선호 카테고리 설정 시작")
+            set_prefer_category(member_id)
+            print(f"memberId={member_id}에 대한 선호 카테고리 설정 완료")
+            return data
     else:
         print(f"회원가입 실패: {response.status_code}, {response.text}")
+        return None
 
 
 # 모임 생성
@@ -159,18 +167,27 @@ def accept_application(groupAdminId, applicationId):
 
 
 
-
-
 def run():
-
-    # 시나리오 랜덤으로 돌리기
+    # 시나리오 랜덤 선택
     choice_num = random.choice([1, 2, 3, 4])
 
     # 로그인 실행
     if choice_num in [1, 2]:
         print("로그인을 실행합니다.")
-        login()
+        login_response = login()
+        if login_response:
+            print(f"로그인 성공! 사용자 정보: {login_response}")
+        else:
+            print("로그인 실패")
+
     # 회원가입 실행
     elif choice_num in [3, 4]:
         print("회원가입을 실행합니다.")
-        register()
+        user_data = register()
+        if user_data:
+            print(f"회원가입 및 선호 카테고리 설정 완료: {user_data}")
+        else:
+            print("회원가입 실패")
+
+    else:
+        print("잘못된 선택입니다. 프로그램을 종료합니다.")
