@@ -158,7 +158,7 @@ def accept_application(groupAdminId, applicationId):
         return None
 
 
-if __name__ == '__main__':
+def run():
     print("회원가입 후 로그인 및 모임 생성 or 신청을 실행합니다.")
 
     # 회원가입 및 로그인

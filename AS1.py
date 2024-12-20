@@ -78,7 +78,7 @@ def register():
     print(f"회원가입 응답 코드: {response.status_code}")  # 응답 상태 코드 출력
     print(f"회원가입 응답 내용: {response.text}")  # 응답 본문 출력
 
-    # 회원가입 API 통신을 성공 할 경우
+    # 회원가입 API 통신을 성공 할 경우 -> 로그인
     if response.status_code == 201:
         login_success = login(data['email'], data['password'])
         return data if login_success else None
@@ -161,7 +161,7 @@ def accept_application(groupAdminId, applicationId):
 
 
 
-if __name__ == '__main__':
+def run():
 
     # 시나리오 랜덤으로 돌리기
     choice_num = random.choice([1, 2, 3, 4])
@@ -174,118 +174,3 @@ if __name__ == '__main__':
     elif choice_num in [3, 4]:
         print("회원가입을 실행합니다.")
         register()
-    # # 회원가입 후 로그인 및 모임생성
-    # else:
-    #     print("회원가입 후 로그인 및 모임 생성을 실행합니다.")
-    #     user_data = register()
-    #     if user_data:
-    #         email, password = user_data['email'], user_data['password']
-    #         print(f"회원가입한 사용자 이메일: {email}, 비밀번호: {password}")
-    #
-    #         login_response = login(email, password)
-    #         if login_response:
-    #             memberId = login_response.get('id')
-    #             print(f"로그인 성공! memberId: {memberId}")
-    #
-    #             group_data = generate_group(memberId)
-    #             print(f"생성된 모임 데이터: {group_data}")
-    #             create_group(group_data)
-    #         else:
-    #             print("로그인 실패로 모임 생성이 중단되었습니다.")
-    #     else:
-    #         print("회원가입 실패로 프로세스를 중단합니다.")
-
-
-# if __name__ == '__main__':
-#     print("회원가입 후 로그인 및 모임 생성 or 신청을 실행합니다.")
-#
-#     # 회원가입 및 로그인
-#     user_data = register()
-#     if user_data:
-#         email, password = user_data['email'], user_data['password']
-#         print(f"회원가입한 사용자 이메일: {email}, 비밀번호: {password}")
-#
-#         login_response = login(email, password)
-#         if login_response:
-#             memberId = login_response.get('id')
-#             print(f"로그인 성공! memberId: {memberId}")
-#
-#             # 랜덤으로 시나리오 선택
-#             scenario = random.choice([1, 2, 3, 4, 5, 6])
-#
-#             if scenario in [1,2]:
-#                 print("시나리오 1: 로그인 후 모임 생성 후 다른 모임 가입 신청")
-#
-#                 # 모임 생성
-#                 group_data = generate_group(memberId)
-#                 print(f"생성된 모임 데이터: {group_data}")
-#                 group_response = create_group(group_data)
-#
-#                 if group_response:
-#                     groupId = group_response.get('id')  # 생성된 모임 ID
-#                     print(f"모임 생성 성공! groupId: {groupId}")
-#
-#                     # 모임 신청
-#                     application_response = create_application(memberId)
-#                     if application_response:
-#                         print("모임 신청 완료!")
-#                     else:
-#                         print("모임 신청 실패!")
-#                 else:
-#                     print("모임 생성 실패로 프로세스를 중단합니다.")
-#
-#             elif scenario in [3,4,5,6]:
-#                 print("시나리오 2: 로그인 후 다른 모임 가입 신청")
-#
-#                 # 다른 모임 가입 신청
-#                 application_response = create_application(memberId)
-#                 if application_response:
-#                     print(f"모임 신청 완료! 응답: {application_response}")
-#                 else:
-#                     print("모임 신청 실패!")
-#             else:
-#                 print("로그인 실패로 프로세스를 중단합니다.")
-#         else:
-#             print("회원가입 실패로 프로세스를 중단합니다.")
-#
-#
-#
-#
-# if __name__ == '__main__':
-#     print("DB에서 신청 목록 조회 및 수락을 실행합니다.")
-#
-#     # DB에서 모든 신청 조회
-#     applications = fetch_all_applications()
-#     if not applications:
-#         print("DB에서 신청 데이터를 찾을 수 없습니다.")
-#     else:
-#         print(f"조회된 신청 목록: {applications}")
-#
-#         # 신청 처리
-#         for application in applications:
-#             application_id = application.get('application_id')
-#             group_id = application.get('group_id')
-#
-#             if not group_id:
-#                 print(f"신청 ID {application_id}: group_id 정보 없음, 건너뜀")
-#                 continue
-#
-#             # 그룹의 ADMIN 사용자 가져오기
-#             admin_user = get_admin(group_id)
-#             if not admin_user:
-#                 print(f"그룹 {group_id}의 ADMIN 사용자를 찾을 수 없어 신청을 건너뜁니다.")
-#                 continue
-#
-#             # ADMIN 사용자로 로그인
-#             login_response = login(admin_user['email'], admin_user['password'])
-#             if login_response:
-#                 admin_id = login_response.get('id')
-#
-#                 # 신청 수락
-#                 accept_response = accept_application(admin_id, application_id)
-#                 if accept_response:
-#                     print(f"신청 ID {application_id} 수락 완료: {accept_response}")
-#                 else:
-#                     print(f"신청 ID {application_id} 수락 실패")
-#             else:
-#                 print(f"ADMIN 로그인 실패: {admin_user['email']}")

@@ -157,7 +157,7 @@ def accept_application(groupAdminId, applicationId):
         return None
 
 
-if __name__ == '__main__':
+def run():
     print("DB에서 신청 목록 조회 및 수락을 실행합니다.")
 
     # DB에서 모든 신청 조회
